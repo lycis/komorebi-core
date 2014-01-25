@@ -6,8 +6,16 @@ import java.util.logging.Logger;
 
 import org.glassfish.grizzly.http.server.HttpServer;
 
+/**
+ * Runnable that takes care of the server start up.
+ * @author lycis
+ *
+ */
 public class ServerRunner implements Runnable {
 
+	/**
+	 * Start up server.
+	 */
 	public void run() {
 		// start a grizzly server to serve requests
 		final HttpServer server = HttpServer.createSimpleServer("."+File.pathSeparator+"htdocs"+File.pathSeparator, 8080);

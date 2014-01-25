@@ -1,22 +1,19 @@
 package org.komorebi.core;
 
+/**
+ * Executes the server core application.
+ * @author lycis
+ *
+ */
 public class KomorebiMain {
 
+	/**
+	 * Execute server
+	 * @param args command line arguments (currently none supported)
+	 */
 	public static void main(String[] args) {
 		ServerRunner sr = new ServerRunner();
-		
-		if(args.length < 1){
-			sr.run();
-		}else{
-			if("--console".equals(args[0])){
-				sr.run();
-			}else if("--demon".equals(args[0]) || "-d".equals(args[0])){
-				System.out.println("Starting Komorebi in daemon mode.");
-				Thread dt = new Thread(sr);
-				//dt.setDaemon(true);
-				dt.start();
-			}
-		}
+		sr.run();
 	}
 
 }
