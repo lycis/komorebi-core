@@ -53,8 +53,9 @@ public class KomorebiCoreConfig extends XMLConfiguration{
 		super.setProperty("connection.keystorepass", "pass"); // password for the keystore
 		
 		// user store
-		super.setProperty("users.store", "user.store"); // filename of the user store
-		super.setProperty("users.hashmethod", "SHA-2"); // used hash method (supported: SHA-2)
+		super.setProperty("users.store", "user.str"); // filename of the user store
+		super.setProperty("users.hashmethod", "SHA-2"); // used hash method (supported: PLAIN (not recommended!!), SHA-2)
+		super.setProperty("users.encrypted", false); // tells if the user store is encrypted (password required on start) 
 		
 		// backup corrupted copy if it exists
 		File cfile = new File(CONFIG_FILENAME);
