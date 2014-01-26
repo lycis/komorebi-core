@@ -2,6 +2,8 @@ package org.komorebi.core.requests;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.GET;
@@ -31,17 +33,28 @@ public class ServerInfo {
 
 		// start time
 		RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
-		json.put("startTime", rb.getStartTime());
+		json.put("starttime", rb.getStartTime());
+		
+		// human readable start time
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(rb.getStartTime());
+		json.put("starttimeReadable", 
+				df.format(cal.getTime())
+		);
 
 		// readable uptime
 		long uptime = rb.getUptime();
 		json.put("uptimeReadable", String.format(
-				"%d days, %d min, %d sec",
-				TimeUnit.DAYS.toDays(uptime),
-				TimeUnit.MILLISECONDS.toMinutes(uptime) - TimeUnit.DAYS.toSeconds(TimeUnit.MINUTES.toDays(uptime)),
+				"%d days %d min %d sec",
+				TimeUnit.MILLISECONDS.toDays(uptime),
+				TimeUnit.MILLISECONDS.toMinutes(uptime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(uptime)),
 				TimeUnit.MILLISECONDS.toSeconds(uptime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(uptime))
 				)
 		);
+		
+		// numeric uptime
+		json.put("uptime", uptime);
 
 		return json.toString();
 	}
