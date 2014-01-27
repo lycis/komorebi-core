@@ -156,7 +156,14 @@ public class UserStore {
 			}
 		}
 		
-		setPassword(adminUser.getPosition(), adminpass); // set password
+		// set password
+		if(!setPassword(adminUser.getPosition(), adminpass)){
+			// password set failed :(
+			clearPassword(adminpass);
+			System.out.println("Initialisation failed. Could not set administrative password.");
+			System.exit(1);
+		}
+		
 		clearPassword(adminpass);
 	}
 	
@@ -182,28 +189,99 @@ public class UserStore {
 		raf.write(uname);
 	}
 	
-	// TODO password check
+	/**
+	 * Checks if the given password matches the password of the user. Used for e.g. login.
+	 * The given password will be hashed according to the configured method and checked afterwards. So if
+	 * the hashing method is changed all currently stored passwords will become invalid.
+	 * 
+	 * @param user user to check
+	 * @param password password to check
+	 * @return <code>true</code> if the password matches
+	 */
+	public boolean checkPassword(User user, char[] password){
+		KomorebiCoreConfig conf = new KomorebiCoreConfig();
+		
+		// hash and clear given password
+		byte[] hashedPw = hashPassword(password, conf.getString("users.hashmethod"));
+		if(hashedPw.length != PASSWORD_BLOCK_LEN){
+			return false; // the password block is always the same size
+		}
+		
+		// read configured password from file
+		File usfile = new File(conf.getString("users.store"));
+		if(!usfile.exists()){
+			Logger.getLogger("userstore").severe("User store file does not exist!");
+			return false;
+		}
+		
+		byte[] filePw = new byte[PASSWORD_BLOCK_LEN];
+		RandomAccessFile raf = null;
+		try{
+			raf = new RandomAccessFile(usfile, "r");
+			raf.seek(user.getPosition());
+			if(raf.read(filePw) != PASSWORD_BLOCK_LEN){
+				throw new IOException("User store corrupted: invalid password block length");
+			}
+		}catch(IOException e){
+			Logger.getLogger("userstore").severe(e.getMessage());
+			return false;
+		}finally{
+			if(raf != null){
+				try{
+					raf.close();
+				}catch(Exception e){
+					Logger.getLogger("userstore").warning("Potential ressource leak: could not close user store RAF (reason: "+e.getMessage()+")");
+				}
+			}
+		}
+		
+		// check if hashed passwords do match
+		for(int i=0; i<PASSWORD_BLOCK_LEN; ++i){
+			if(hashedPw[i] != filePw[i]){
+				return false; // passwords do not match
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Applies the given hash algorithm to the password. The password will be cleard afterwards.
+	 * 
+	 * @param password password string to be hashed
+	 * @param method hashing method (currently supported: PLAIN)
+	 * @return hashed password
+	 */
+	private byte[] hashPassword(char[] password, String method){
+		byte[] hashed = new byte[PASSWORD_BLOCK_LEN];
+		
+		method = method.trim().toUpperCase();
+		if("PLAIN".equals(method)){
+			// warn about plaintext
+			Logger.getLogger("userstore").warning("You are using PLANTEXT passwords. This is not recommended!");
+			for(int i=0; i<(hashed.length<password.length?hashed.length:password.length); ++i){
+				hashed[i] = (byte) password[i]; // ONLY ASCII
+			}
+		}else{
+			Logger.getLogger("userstore").severe("Can not set password - Unknown hash method.");
+			return hashed;
+		}
+		
+		clearPassword(password);
+		return hashed;
+	}
 	
 	/**
 	 * Sets and hashes a user password.
 	 * 
 	 * @param position position of the user record in the store
 	 * @param password password (plain text)
+	 * @return <code>true</code> if the password was set
 	 */
-	public void setPassword(long position, char[] password){
+	public boolean setPassword(long position, char[] password){
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 		
-		byte[] filePass = new byte[PASSWORD_BLOCK_LEN];
-		
-		if("PLAIN".equals(config.getString("users.hashmethod").trim().toUpperCase())){
-			// warn about plaintext
-			Logger.getLogger("userstore").warning("You are using PLANTEXT passwords. This is not recommended!");
-			for(int i=0; i<(filePass.length<password.length?filePass.length:password.length); ++i){
-				filePass[i] = (byte) password[i]; // ONLY ASCII
-			}
-		}else{
-			Logger.getLogger("userstore").severe("Can not set password - Unknown hash method.");
-		}
+		byte[] filePass = hashPassword(password, config.getString("users.hashmethod"));
 		
 		// TODO implement SHA-2
 		
@@ -215,13 +293,14 @@ public class UserStore {
 			usfile.close();
 		}catch(FileNotFoundException e){
 			Logger.getLogger("userstore").severe("Password error: user store file not found");
-			return;
+			return false;
 		}catch(IOException e){
 			Logger.getLogger("userstore").severe("Can not set password: "+e.getMessage());
-			return;
+			return false;
 		}
 		
 		clearPassword(password);
+		return true;
 	}
 	
 	private void clearPassword(char[] pw){
