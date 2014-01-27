@@ -1,7 +1,5 @@
 package org.komorebi.core.security;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 
 /**
  * Represents the data of a user (name, permissions, groups, accounts etc.). Passwords are not stored
