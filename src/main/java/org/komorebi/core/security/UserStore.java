@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -24,14 +26,18 @@ import org.komorebi.core.configuration.KomorebiCoreConfig;
  */
 public class UserStore {
 	
-	private static final int VERSION = 1;
-	private static final int PASSWORD_BLOCK_LEN = 1024;
+	// constants
+	private static final int VERSION = 1; // most recent version of the file format
+	private static final int PASSWORD_BLOCK_LEN = 1024; // length of the password block
 
 	// singleton instance
 	private static UserStore store = new UserStore();
+	
+	// members
+	private Map<String, User> userMap = null;
 
 	private UserStore() {
-
+		userMap = new HashMap<String, User>();
 	}
 
 	/**
@@ -41,18 +47,19 @@ public class UserStore {
 		return store;
 	}
 
-	public void load(char[] password) {
+	public boolean load(char[] password) {
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 
 		if (config.getBoolean("users.encrypted")) {
 			// TODO decrypt user store file
 		}
 
-		// TODO initialise empty user directory
+		userMap.clear(); // initialise user cache
 
 		File storefile = new File(config.getString("users.store"));
 		if (!storefile.exists()) {
-			return;
+			Logger.getLogger("userstore").severe("User store file ("+storefile.getAbsolutePath()+") not found.");
+			return false;
 		}
 
 		// here is where the actual user store is read in its binary format
@@ -61,48 +68,42 @@ public class UserStore {
 		// it must be able to use a newer core version with an older file
 		// version.
 		// the version of the file is stored in the first 4 byte (= integer)
-		FileInputStream fis = null;
-		DataInputStream ds = null;
+		RandomAccessFile raf = null;
 		try {
-			fis = new FileInputStream(storefile);
-			ds = new DataInputStream(fis);
-
+			raf = new RandomAccessFile(storefile, "r");
+			
 			// read version
-			int version = ds.readInt();
-			if (version != 0) {
+			int version = raf.readInt();
+			if (version != 1) {
 				throw new IOException("Not supported user store version");
 			}
 
-			// TODO process user store
+			// read one user block after another
+			while(raf.getFilePointer() < raf.length()){
+				User u = restoreUser(raf);
+				userMap.put(u.getUsername(), u);
+			}
 
 		} catch (IOException e) {
 			Logger.getLogger("userstore")
 					.severe("The user store can not be accessed (reason: "
 							+ e.getMessage()
 							+ "). It may be corrputed! You may need to delete and renew it...");
-			System.exit(1);
+			return false;
 		} finally {
-			if (fis != null) {
+			if (raf != null) {
 				try {
-					fis.close();
+					raf.close();
 				} catch (IOException e) {
 					Logger.getLogger("userstore").warning(
-							"Potential resource leak: could not close user store fis (reason: "
-									+ e.getMessage() + ")");
-				}
-			}
-
-			if (ds != null) {
-				try {
-					ds.close();
-				} catch (IOException e) {
-					Logger.getLogger("userstore").warning(
-							"Potential resource leak: could not close user store ds (reason: "
+							"Potential resource leak: could not close user store RAF (reason: "
 									+ e.getMessage() + ")");
 				}
 			}
 		}
-
+		
+		Logger.getLogger("userstore").info("Loaded User Store with "+userMap.size()+" registered users.");
+		return true;
 	}
 
 	/**
@@ -187,6 +188,28 @@ public class UserStore {
 		raf.writeInt(user.getUsername().length());
 		byte[] uname = user.getUsername().getBytes("UTF-8");
 		raf.write(uname);
+	}
+	
+	private User restoreUser(RandomAccessFile raf) throws IOException{
+		if(raf.length()-raf.getFilePointer() <= PASSWORD_BLOCK_LEN){
+			throw new IOException("Corrupted user record detected. Password block is too small. ("+(raf.length()-raf.getFilePointer())+" instead of "
+					              +PASSWORD_BLOCK_LEN+")");
+		}
+		
+		// read over pass word block
+		raf.seek(raf.getFilePointer()+PASSWORD_BLOCK_LEN);
+		
+		// read user name
+		int unameLen = raf.readInt();
+		byte[] uname = new byte[unameLen];
+		if(raf.read(uname) != unameLen){
+			throw new IOException("Corrupted user store. User record does not contain user name!");
+		}
+		
+		// build user object
+		User u = new User();
+		u.setUsername(new String(uname, "UTF-8"));
+		return u;
 	}
 	
 	/**

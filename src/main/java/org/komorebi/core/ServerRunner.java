@@ -32,7 +32,10 @@ public class ServerRunner implements Runnable {
 		if(config.getBoolean("users.encrypted")){
 			// TODO password query + load with password
 		}else{
-			UserStore.getInstance().load(null);
+			if(!UserStore.getInstance().load(null)){
+				Logger.getGlobal().severe("Could not load user store!!! Panic shutdown!");
+				System.exit(1);
+			}
 		}
 		
 		// start a grizzly server to serve requests
