@@ -2,18 +2,15 @@ package org.komorebi.core.security;
 
 import java.io.Console;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import org.komorebi.core.configuration.KomorebiCoreConfig;
-
-import com.google.common.io.CountingOutputStream;
 
 /**
  * This class allows access to user information. It creates an in-memory user
@@ -121,9 +118,7 @@ public class UserStore {
 		char[] adminpass = con.readPassword();
 
 		User adminUser = new User();
-		adminUser.setUsername(adminuser);		
-		FileOutputStream fos = null;
-		DataOutputStream ds = null;
+		adminUser.setUsername(adminuser);
 		
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 		File storefile = new File(config.getString("users.store"));
@@ -136,43 +131,33 @@ public class UserStore {
 			}
 		}
 		
+		RandomAccessFile raf = null;
 		try{
-			fos = new FileOutputStream(storefile);
-			CountingOutputStream cs = new CountingOutputStream(fos);
-			ds = new DataOutputStream(cs);
+			 raf = new RandomAccessFile(storefile, "rw");
 			
 			// write version
-			ds.writeInt(VERSION);
+			raf.writeInt(VERSION);
 			
 			// write admin user
-			adminUser.setPosition((int) cs.getCount()); // admin user starts on position zero
-			storeUser(adminUser, ds, true);
+			adminUser.setPosition(raf.getFilePointer()); // admin user starts on position zero
+			storeUser(adminUser, raf, true);
 		}catch(IOException e){
 			System.out.println("Error: "+e.getMessage());
 			System.exit(1);
 		}finally{
-			if (fos != null) {
+			if (raf != null) {
 				try {
-					fos.close();
+					raf.close();
 				} catch (IOException e) {
 					Logger.getLogger("userstore").warning(
-							"Potential resource leak: could not close user store fis (reason: "
-									+ e.getMessage() + ")");
-				}
-			}
-
-			if (ds != null) {
-				try {
-					ds.close();
-				} catch (IOException e) {
-					Logger.getLogger("userstore").warning(
-							"Potential resource leak: could not close user store ds (reason: "
+							"Potential resource leak: could not close user store RAF (reason: "
 									+ e.getMessage() + ")");
 				}
 			}
 		}
 		
 		setPassword(adminUser.getPosition(), adminpass); // set password
+		clearPassword(adminpass);
 	}
 	
 	/**
@@ -181,22 +166,20 @@ public class UserStore {
 	 * @param position position of the user record in user store
 	 * @param unew indicates that it is a new user
 	 */
-	public void storeUser(User user, DataOutputStream os, boolean unew) throws IOException{
+	public void storeUser(User user, RandomAccessFile raf, boolean unew) throws IOException{
 		
 		// password - either skip or delete
 		if(unew){
 			byte[] pass = new byte[PASSWORD_BLOCK_LEN]; // 1K password block
-			os.write(pass);
+			raf.write(pass);
 		}else{
-			//byte[] pass = getPassword(user.getPosition());
-			//os.write(pass);
-			// TODO implement read & save password
+			raf.seek(user.getPosition()+PASSWORD_BLOCK_LEN);
 		}
 		
 		// user name
-		os.writeInt(user.getUsername().length());
+		raf.writeInt(user.getUsername().length());
 		byte[] uname = user.getUsername().getBytes("UTF-8");
-		os.write(uname);
+		raf.write(uname);
 	}
 	
 	// TODO password check
@@ -238,6 +221,14 @@ public class UserStore {
 			return;
 		}
 		
-		password = new char[password.length];
+		clearPassword(password);
+	}
+	
+	private void clearPassword(char[] pw){
+		String alphabet = "123xyz";
+		Random r = new Random();
+		for(int i=0; i<pw.length; ++i){
+			pw[i] = alphabet.charAt(r.nextInt(alphabet.length()));
+		}
 	}
 }
