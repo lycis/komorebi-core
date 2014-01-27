@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 public class User {
 	private String username = "";
-	private int position = 0;
+	private long position = 0;
 	
 	/**
 	 * @return login name of the user
@@ -32,7 +32,7 @@ public class User {
 	/**
 	 * @return position of the record in the user store - needed for password retrieval
 	 */
-	public int getPosition() {
+	public long getPosition() {
 		return position;
 	}
 	
@@ -40,7 +40,7 @@ public class User {
 	 * Set the position of the record in the user store.
 	 * @param position
 	 */
-	public void setPosition(int position) {
+	public void setPosition(long position) {
 		this.position = position;
 	}
 }

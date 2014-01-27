@@ -5,10 +5,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
 import org.komorebi.core.configuration.KomorebiCoreConfig;
@@ -199,13 +199,15 @@ public class UserStore {
 		os.write(uname);
 	}
 	
+	// TODO password check
+	
 	/**
 	 * Sets and hashes a user password.
 	 * 
 	 * @param position position of the user record in the store
 	 * @param password password (plain text)
 	 */
-	public void setPassword(int position, char[] password){
+	public void setPassword(long position, char[] password){
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 		
 		byte[] filePass = new byte[PASSWORD_BLOCK_LEN];
@@ -222,31 +224,18 @@ public class UserStore {
 		
 		// TODO implement SHA-2
 		
-		// read file
-		byte[] data;
+		// RAF access
 		try{
-			FileInputStream fis = new FileInputStream(config.getString("users.store"));
-			data = new byte[fis.available()];
-			fis.read(data);
-			fis.close();
-		}catch(IOException e){
-			Logger.getLogger("userstore").severe("Could not read user store: "+e.getMessage());
-			password = new char[password.length];
+			RandomAccessFile usfile = new RandomAccessFile(config.getString("users.store"), "rw");
+			usfile.seek(position);
+			usfile.write(filePass);
+			usfile.close();
+		}catch(FileNotFoundException e){
+			Logger.getLogger("userstore").severe("Password error: user store file not found");
 			return;
-		}
-		
-		// set password
-		for(int i=0; i<filePass.length; ++i){
-			data[position+i] = filePass[i];
-		}
-		
-		// write to file
-		try{
-			FileOutputStream fos = new FileOutputStream(config.getString("users.store"));
-			fos.write(data);
-			fos.close();
 		}catch(IOException e){
-			Logger.getLogger("userstore").severe("Could not set password: "+e.getMessage());
+			Logger.getLogger("userstore").severe("Can not set password: "+e.getMessage());
+			return;
 		}
 		
 		password = new char[password.length];
