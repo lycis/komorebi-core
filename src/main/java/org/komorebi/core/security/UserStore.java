@@ -1,9 +1,7 @@
 package org.komorebi.core.security;
 
 import java.io.Console;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -47,7 +45,12 @@ public class UserStore {
 		return store;
 	}
 
-	public boolean load(char[] password) {
+	/**
+	 * Loads the data from the configured user store.
+	 * @param password password in case the user store is encrypted. (use <code>null</code> if not)
+	 * @return
+	 */
+	synchronized public boolean load(char[] password) {
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 
 		if (config.getBoolean("users.encrypted")) {
@@ -111,7 +114,7 @@ public class UserStore {
 	 * 
 	 * @param file
 	 */
-	public void init(String file) {
+	synchronized public void init(String file) {
 		Console con = System.console();
 		System.out.print("Administrator user name: ");
 		String adminuser = con.readLine();
@@ -174,7 +177,7 @@ public class UserStore {
 	 * @param position position of the user record in user store
 	 * @param unew indicates that it is a new user
 	 */
-	public void storeUser(User user, RandomAccessFile raf, boolean unew) throws IOException{
+	private void storeUser(User user, RandomAccessFile raf, boolean unew) throws IOException{
 		
 		// password - either skip or delete
 		if(unew){
@@ -191,8 +194,10 @@ public class UserStore {
 	}
 	
 	private User restoreUser(RandomAccessFile raf) throws IOException{
-		if(raf.length()-raf.getFilePointer() <= PASSWORD_BLOCK_LEN){
-			throw new IOException("Corrupted user record detected. Password block is too small. ("+(raf.length()-raf.getFilePointer())+" instead of "
+		long startpos = raf.getFilePointer(); // position of user record
+		
+		if(raf.length()-startpos <= PASSWORD_BLOCK_LEN){
+			throw new IOException("Corrupted user record detected. Password block is too small. ("+(raf.length()-startpos)+" instead of "
 					              +PASSWORD_BLOCK_LEN+")");
 		}
 		
@@ -209,6 +214,7 @@ public class UserStore {
 		// build user object
 		User u = new User();
 		u.setUsername(new String(uname, "UTF-8"));
+		u.setPosition(startpos);
 		return u;
 	}
 	
@@ -221,7 +227,7 @@ public class UserStore {
 	 * @param password password to check
 	 * @return <code>true</code> if the password matches
 	 */
-	public boolean checkPassword(User user, char[] password){
+	synchronized public boolean checkPassword(User user, char[] password){
 		KomorebiCoreConfig conf = new KomorebiCoreConfig();
 		
 		// hash and clear given password
@@ -281,7 +287,7 @@ public class UserStore {
 		method = method.trim().toUpperCase();
 		if("PLAIN".equals(method)){
 			// warn about plaintext
-			Logger.getLogger("userstore").warning("You are using PLANTEXT passwords. This is not recommended!");
+			Logger.getLogger("userstore").warning("You are using PLAINTEXT passwords. This is not recommended!");
 			for(int i=0; i<(hashed.length<password.length?hashed.length:password.length); ++i){
 				hashed[i] = (byte) password[i]; // ONLY ASCII
 			}
@@ -301,7 +307,7 @@ public class UserStore {
 	 * @param password password (plain text)
 	 * @return <code>true</code> if the password was set
 	 */
-	public boolean setPassword(long position, char[] password){
+	synchronized public boolean setPassword(long position, char[] password){
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 		
 		byte[] filePass = hashPassword(password, config.getString("users.hashmethod"));
@@ -326,11 +332,26 @@ public class UserStore {
 		return true;
 	}
 	
+	/**
+	 * Clears a character array that was used to store a password by overwriting it with random
+	 * characters.
+	 * @param pw array to be cleared
+	 */
 	private void clearPassword(char[] pw){
-		String alphabet = "123xyz";
+		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 		Random r = new Random();
 		for(int i=0; i<pw.length; ++i){
 			pw[i] = alphabet.charAt(r.nextInt(alphabet.length()));
 		}
+	}
+	
+	/**
+	 * Returns the User object (permissions, connected services, etc.) associated with the user
+	 * name. 
+	 * @param username name of the user you wish to get
+	 * @return the User object associated to the user or <code>null</code> if the user does not exist
+	 */
+	synchronized public User getUser(String username){
+		return userMap.get(username);
 	}
 }

@@ -29,6 +29,7 @@ public class ResourceAuthFilter implements ContainerRequestFilter {
 		// Extract authentication credentials
 		String auth = requestContext.getHeaderString(ContainerRequest.AUTHORIZATION);
 		if (auth == null) {
+			System.out.println("missing auth");
 			requestContext.abortWith(unauthorizedResponse);
 			return;
 		}
@@ -36,18 +37,25 @@ public class ResourceAuthFilter implements ContainerRequestFilter {
 		// decode bas64 password
 		auth = auth.replaceFirst("[Bb]asic ", "");
 		String userpass = Base64.decodeAsString(auth);
-		if(!userpass.contains(":")){
+		if(!userpass.contains(":")  || userpass.split(":").length < 2){
+			System.out.println("auth wrong => "+userpass);
 			requestContext.abortWith(unauthorizedResponse);
 			return;
 		}
 		
 		// check given password vs. configured password
 		UserStore ustore = UserStore.getInstance();
-		String user = auth.split(":")[0];
-		User u = null; // TODO find user
+		String user = userpass.split(":")[0];
+		User u = ustore.getUser(user);
+		if(u == null){
+			System.out.println("no user");
+			requestContext.abortWith(unauthorizedResponse);
+			return;
+		}
 		
-		String pass = auth.split(":")[1];
+		String pass = userpass.split(":")[1];
 		if(!ustore.checkPassword(u, pass.toCharArray())){
+			System.out.println("wrongpass");
 			requestContext.abortWith(unauthorizedResponse);
 			return;
 		}

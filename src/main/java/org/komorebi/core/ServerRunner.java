@@ -45,7 +45,7 @@ public class ServerRunner implements Runnable {
 
 		URI uri = null;
 		try {
-			uri = new URI("https://localhost:"+config.getString("connection.port"+"/"));
+			uri = new URI("https://localhost:"+config.getString("connection.port")+"/");
 		} catch (URISyntaxException e) {
 			Logger.getGlobal().severe("URI syntax error: " + e.getMessage());
 			System.exit(1);

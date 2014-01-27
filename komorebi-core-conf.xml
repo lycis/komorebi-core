@@ -3,11 +3,11 @@
 <connection>
 <port>8080</port>
 <keystore>keystore</keystore>
-<keystorepass>pass</keystorepass>
+<keystorepass>foobar</keystorepass>
 </connection>
 <users>
 <store>user.str</store>
-<hashmethod>SHA-2</hashmethod>
+<hashmethod>PLAIN</hashmethod>
 <encrypted>false</encrypted>
 </users>
 </komorebi-core>
