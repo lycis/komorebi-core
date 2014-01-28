@@ -40,7 +40,7 @@ public class ServerRunner implements Runnable {
 		
 		// start a grizzly server to serve requests
 		ResourceConfig rc = new ResourceConfig();
-		rc.packages("org.komorebi.core.requests");
+		rc.packages("org.komorebi.core.resources");
 		rc.register(org.komorebi.core.security.ResourceAuthFilter.class);
 
 		URI uri = null;

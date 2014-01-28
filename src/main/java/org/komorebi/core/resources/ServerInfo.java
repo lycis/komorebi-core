@@ -1,4 +1,4 @@
-package org.komorebi.core.requests;
+package org.komorebi.core.resources;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
