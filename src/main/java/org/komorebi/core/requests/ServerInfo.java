@@ -20,7 +20,7 @@ import org.komorebi.core.Version;
  * @author lycis
  * 
  */
-@Path("serverInfo")
+@Path("server/info")
 public class ServerInfo {
 
 	@GET
