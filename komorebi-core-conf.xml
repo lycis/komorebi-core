@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <komorebi-core>
-<connection>
-<port>8080</port>
-<keystore>keystore</keystore>
-<keystorepass>foobar</keystorepass>
-</connection>
-<users>
-<store>user.str</store>
-<hashmethod>PLAIN</hashmethod>
-<encrypted>false</encrypted>
-</users>
+  <connection>
+    <port>8080</port>
+    <keystore>keystore</keystore>
+    <keystorepass>foobar</keystorepass>
+  </connection>
+  <users>
+    <store>user.str</store>
+    <hashmethod>PLAIN</hashmethod>
+    <encrypted>false</encrypted>
+  </users>
+  <plugins>
+    <plugin name="localstorage" version="0.0.1"/>
+	<plugin name="foo" version="0.0.1"/>
+  </plugins>
 </komorebi-core>

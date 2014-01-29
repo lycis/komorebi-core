@@ -11,6 +11,7 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.komorebi.core.configuration.KomorebiCoreConfig;
+import org.komorebi.core.plugin.PluginManager;
 import org.komorebi.core.security.UserStore;
 
 /**
@@ -37,6 +38,9 @@ public class ServerRunner implements Runnable {
 				System.exit(1);
 			}
 		}
+		
+		// Write current status of PluginManager (this also loads all plugins)
+		PluginManager.logStatus();
 		
 		// start a grizzly server to serve requests
 		ResourceConfig rc = new ResourceConfig();
