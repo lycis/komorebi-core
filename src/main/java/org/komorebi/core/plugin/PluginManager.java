@@ -186,9 +186,35 @@ public class PluginManager {
 		return;
 	}
 	
-	public static IKomorebiStorage getPlugin(PluginType t, String name){
-		// TODO implement
-		return null;
+	public static IKomorebiPlugin getPlugin(PluginType t, String name){
+		if(!getPluginsByType(t).contains(name)){
+			return null;
+		}
+		
+		Class<IKomorebiPlugin> cl = instance.pluginRegister.get(t).get(name);
+		
+		IKomorebiPlugin pi = null;
+		try {
+			Constructor<IKomorebiPlugin> con = cl.getConstructor();
+			pi = con.newInstance();
+			if(pi.isConfigConsumer()){
+				// TODO set config values
+			}
+		} catch (InstantiationException e) {
+			Logger.getLogger(LOGGER_NAME).warning("Plugin '"+name+"' caused an error ("+e.getMessage()+") and will be omitted.");
+		} catch (IllegalAccessException e) {
+			Logger.getLogger(LOGGER_NAME).warning("Plugin '"+name+"' caused an error ("+e.getMessage()+") and will be omitted.");
+		} catch (IllegalArgumentException e) {
+			Logger.getLogger(LOGGER_NAME).warning("Plugin '"+name+"' caused an error ("+e.getMessage()+") and will be omitted.");
+		} catch (InvocationTargetException e) {
+			Logger.getLogger(LOGGER_NAME).warning("Plugin '"+name+"' caused an error ("+e.getMessage()+") and will be omitted.");
+		} catch (NoSuchMethodException e) {
+			Logger.getLogger(LOGGER_NAME).warning("Plugin '"+name+"' caused an error ("+e.getMessage()+") and will be omitted.");
+		} catch (SecurityException e) {
+			Logger.getLogger(LOGGER_NAME).warning("Plugin '"+name+"' caused an error ("+e.getMessage()+") and will be omitted.");
+		}
+		
+		return pi;
 	}
 	
 	/**
