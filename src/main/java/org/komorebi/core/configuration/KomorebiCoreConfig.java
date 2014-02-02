@@ -57,6 +57,10 @@ public class KomorebiCoreConfig extends XMLConfiguration{
 		super.setProperty("users.hashmethod", "SHA-2"); // used hash method (supported: PLAIN (not recommended!!), SHA-2)
 		super.setProperty("users.encrypted", false); // tells if the user store is encrypted (password required on start) 
 		
+		// storage options
+		super.setProperty("storage.threads", 1); // number of threads to handle storage threads
+		super.setProperty("storage.retentionTime", 300); // indicates how long the records of a storage job are kept until purged
+		
 		// backup corrupted copy if it exists
 		File cfile = new File(CONFIG_FILENAME);
 		if(cfile.exists()){

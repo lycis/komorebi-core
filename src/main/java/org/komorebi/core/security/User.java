@@ -12,6 +12,8 @@ public class User {
 	private String username = "";
 	private long position = 0;
 	
+	// TODO handling storage locations
+	
 	/**
 	 * @return login name of the user
 	 */

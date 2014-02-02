@@ -19,8 +19,8 @@ import org.apache.commons.configuration.tree.ConfigurationNode;
 import org.komorebi.core.configuration.KomorebiCoreConfig;
 import org.komorebi.plugin.IKomorebiConfigurationConsumer;
 import org.komorebi.plugin.IKomorebiPlugin;
-import org.komorebi.plugin.IKomorebiStorage;
 import org.komorebi.plugin.annotations.KomorebiPluginStatus;
+import org.komorebi.plugin.storage.IKomorebiStorage;
 
 /**
  * This is a singleton manager class that provides a possibility to load and instantiate
