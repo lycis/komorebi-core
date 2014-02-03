@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.komorebi.core.configuration.KomorebiCoreConfig;
@@ -27,6 +28,7 @@ public class UserStore {
 	// constants
 	private static final int VERSION = 1; // most recent version of the file format
 	private static final int PASSWORD_BLOCK_LEN = 1024; // length of the password block
+	private static final String STRING_ENCODING = "UTF-8"; // encoding of stored strings
 
 	// singleton instance
 	private static UserStore store = new UserStore();
@@ -179,7 +181,7 @@ public class UserStore {
 	 */
 	private void storeUser(User user, RandomAccessFile raf, boolean unew) throws IOException{
 		
-		// password - either skip or delete
+		// 1. password - either skip or delete
 		if(unew){
 			byte[] pass = new byte[PASSWORD_BLOCK_LEN]; // 1K password block
 			raf.write(pass);
@@ -187,14 +189,44 @@ public class UserStore {
 			raf.seek(user.getPosition()+PASSWORD_BLOCK_LEN);
 		}
 		
-		// user name
+		// 2. user name
+		// 2.a length of user name
 		raf.writeInt(user.getUsername().length());
-		byte[] uname = user.getUsername().getBytes("UTF-8");
+		// 2.b actual user name
+		byte[] uname = user.getUsername().getBytes(STRING_ENCODING);
 		raf.write(uname);
+		
+		// 3. credentials
+		Set<String> locations = user.getLocations();
+		// 3.a number of locations
+		raf.writeInt(locations.size());
+		for(String loc: locations){
+			// 3.b location (length + name)
+			raf.write(loc.length());
+			raf.write(loc.getBytes(STRING_ENCODING));
+			
+			// 3.c number of credentials
+			Set<String> credentials = user.getCredentials(loc);
+			raf.write(credentials.size());
+			
+			for(String key: credentials){
+				// 3.d key (length + key)
+				raf.write(key.length());
+				raf.write(key.getBytes(STRING_ENCODING));
+				
+				// 3.e value (length + key)
+				String val = user.getCredentialValue(loc, key);
+				raf.write(val.length());
+				raf.write(val.getBytes(STRING_ENCODING));
+			}
+		}
 	}
 	
 	private User restoreUser(RandomAccessFile raf) throws IOException{
+		User u = new User(); // returned user object
+		
 		long startpos = raf.getFilePointer(); // position of user record
+		u.setPosition(startpos);
 		
 		if(raf.length()-startpos <= PASSWORD_BLOCK_LEN){
 			throw new IOException("Corrupted user record detected. Password block is too small. ("+(raf.length()-startpos)+" instead of "
@@ -210,11 +242,42 @@ public class UserStore {
 		if(raf.read(uname) != unameLen){
 			throw new IOException("Corrupted user store. User record does not contain user name!");
 		}
+		u.setUsername(new String(uname, STRING_ENCODING));
 		
-		// build user object
-		User u = new User();
-		u.setUsername(new String(uname, "UTF-8"));
-		u.setPosition(startpos);
+		// 3. read location credentials
+		int locationCount = raf.readInt();
+		for(int i=0;i<locationCount;++i){
+			// read location name
+			int locationStrLen = raf.readInt(); // 3.a length of location name
+			byte[] locNameBArr = new byte[locationStrLen];
+			if(raf.read(locNameBArr) != locationStrLen){ // 3.b location name
+				throw new IOException("Corrupted user store. Credential location record is invalid.");
+			}
+			
+			String location = new String(locNameBArr, STRING_ENCODING);
+			
+			// 3.c read number of credentials for location
+			int numCredentials = raf.readInt();
+			for(int j=0; j<numCredentials; ++j){
+				// 3.d credential key (length + key)
+				int keyLen = raf.readInt();
+				byte[] keyBArr = new byte[keyLen];
+				if(raf.read(keyBArr) != keyLen){
+					throw new IOException("Corrupted user store. Credential key record is invalid.");
+				}
+				
+				// 3.d credential key (length + key)
+				int valLen = raf.readInt();
+				byte[] valBArr = new byte[valLen];
+				if(raf.read(valBArr) != valLen){
+					throw new IOException("Corrupted user store. Credential value record is invalid.");
+				}
+				
+				String credentialKey = new String(keyBArr, STRING_ENCODING);
+				String credentialValue = new String(valBArr, STRING_ENCODING);
+				u.setCredentialValue(location, credentialKey, credentialValue);
+			}
+		}
 		return u;
 	}
 	
