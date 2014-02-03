@@ -10,6 +10,7 @@ import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.model.Resource;
 import org.komorebi.core.configuration.KomorebiCoreConfig;
 import org.komorebi.core.plugin.PluginManager;
 import org.komorebi.core.security.UserStore;
@@ -44,7 +45,7 @@ public class ServerRunner implements Runnable {
 		
 		// start a grizzly server to serve requests
 		ResourceConfig rc = new ResourceConfig();
-		rc.packages("org.komorebi.core.resources");
+		rc.packages(true, "org.komorebi.core.resources");
 		rc.register(org.komorebi.core.security.ResourceAuthFilter.class);
 
 		URI uri = null;

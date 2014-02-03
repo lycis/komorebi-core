@@ -10,8 +10,8 @@
     <hashmethod>PLAIN</hashmethod>
     <encrypted>false</encrypted>
   </users>
-  <plugins>
+  <!--<plugins>
     <plugin name="localstorage" version="0.0.1"/>
 	<plugin name="foo" version="0.0.1"/>
-  </plugins>
+  </plugins>-->
 </komorebi-core>
