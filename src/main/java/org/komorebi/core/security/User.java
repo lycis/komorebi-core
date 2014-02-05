@@ -15,10 +15,10 @@ import java.util.Set;
  */
 public class User implements Principal{
 	private String username = "";
-	private long position = 0;
-	private Map<String, Map<String, String>> credentials = new HashMap<String, Map<String, String>>();
+	private long position = 0; // position of the user within the user store (needed for password check)
+	private Map<String, Map<String, String>> credentials = new HashMap<String, Map<String, String>>(); // credentials for storage locations
+	private long privileges = 0; // privileges bitmask
 	
-	// TODO privileges
 	// TODO user groups
 	
 	/**
@@ -99,5 +99,40 @@ public class User implements Principal{
 		}
 		
 		return credentials.get(location).keySet();
+	}
+	
+	/**
+	 * Sets the status of a privilege for the user.
+	 * 
+	 * @param privilege name of the privilege
+	 * @param status grants the privilege when <code>true</code> or revokes it when set to <code>flase</code>
+	 */
+	public void setPrivilege(String privilege, boolean status){
+		int bit = Privilege.getPrivilegeBit(privilege);
+		if(bit < 0){
+			throw new SecurityException("Unknown privilege");
+		}
+		
+		if(status){
+			privileges = privileges | (1 << bit);
+		}else{
+			privileges = privileges | ~(1 << bit);
+		}
+		return;
+	}
+	
+	/**
+	 * Tests if the user has the given privilege.
+	 * 
+	 * @param privilege name of the privilege (use defined constants in class <code>Privilege</code>)
+	 * @return <code>true</code> if the user has the privilege
+	 */
+	public boolean hasPrivilege(String privilege){
+		int bit = Privilege.getPrivilegeBit(privilege);
+		if(bit < 0){
+			throw new SecurityException("Unknown privilege");
+		}
+		
+		return ((privileges & (1 << bit)) == 1);
 	}
 }
