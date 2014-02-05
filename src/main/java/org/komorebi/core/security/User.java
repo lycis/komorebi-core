@@ -1,5 +1,6 @@
 package org.komorebi.core.security;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -12,7 +13,7 @@ import java.util.Set;
  * @author lycis
  *
  */
-public class User {
+public class User implements Principal{
 	private String username = "";
 	private long position = 0;
 	private Map<String, Map<String, String>> credentials = new HashMap<String, Map<String, String>>();
@@ -20,7 +21,7 @@ public class User {
 	/**
 	 * @return login name of the user
 	 */
-	public String getUsername() {
+	public String getName() {
 		return username;
 	}
 	
@@ -28,7 +29,7 @@ public class User {
 	 * Set the username
 	 * @param username
 	 */
-	public void setUsername(String username) {
+	public void setName(String username) {
 		this.username = username;
 	}
 	

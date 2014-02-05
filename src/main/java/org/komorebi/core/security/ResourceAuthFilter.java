@@ -58,6 +58,9 @@ public class ResourceAuthFilter implements ContainerRequestFilter {
 		user     = null;
 		pass     = null;
 		userpass = null;
+		
+		// when user is authenticated set security context
+		requestContext.setSecurityContext(new KomorebiSecurityContext(u));
 		return;
 	}
 

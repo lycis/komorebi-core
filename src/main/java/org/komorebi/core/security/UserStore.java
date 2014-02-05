@@ -86,7 +86,7 @@ public class UserStore {
 			// read one user block after another
 			while(raf.getFilePointer() < raf.length()){
 				User u = restoreUser(raf);
-				userMap.put(u.getUsername(), u);
+				userMap.put(u.getName(), u);
 			}
 
 		} catch (IOException e) {
@@ -124,7 +124,7 @@ public class UserStore {
 		char[] adminpass = con.readPassword();
 
 		User adminUser = new User();
-		adminUser.setUsername(adminuser);
+		adminUser.setName(adminuser);
 		
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 		File storefile = new File(config.getString("users.store"));
@@ -191,9 +191,9 @@ public class UserStore {
 		
 		// 2. user name
 		// 2.a length of user name
-		raf.writeInt(user.getUsername().length());
+		raf.writeInt(user.getName().length());
 		// 2.b actual user name
-		byte[] uname = user.getUsername().getBytes(STRING_ENCODING);
+		byte[] uname = user.getName().getBytes(STRING_ENCODING);
 		raf.write(uname);
 		
 		// 3. credentials
@@ -242,7 +242,7 @@ public class UserStore {
 		if(raf.read(uname) != unameLen){
 			throw new IOException("Corrupted user store. User record does not contain user name!");
 		}
-		u.setUsername(new String(uname, STRING_ENCODING));
+		u.setName(new String(uname, STRING_ENCODING));
 		
 		// 3. read location credentials
 		int locationCount = raf.readInt();
