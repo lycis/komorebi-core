@@ -18,6 +18,9 @@ public class User implements Principal{
 	private long position = 0;
 	private Map<String, Map<String, String>> credentials = new HashMap<String, Map<String, String>>();
 	
+	// TODO privileges
+	// TODO user groups
+	
 	/**
 	 * @return login name of the user
 	 */

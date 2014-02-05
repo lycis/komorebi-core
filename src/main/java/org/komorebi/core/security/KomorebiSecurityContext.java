@@ -17,15 +17,16 @@ public class KomorebiSecurityContext implements SecurityContext {
 	}
 
 	public boolean isUserInRole(String role) {
+		// TODO user privileges check (including privileges granted by user groups)
 		return false;
 	}
 
 	public boolean isSecure() {
-		return false;
+		return true; // only HTTPS is permitted
 	}
 
 	public String getAuthenticationScheme() {
-		return null;
+		return SecurityContext.BASIC_AUTH; // basic authentication
 	}
 
 }
