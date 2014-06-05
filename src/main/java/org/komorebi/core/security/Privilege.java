@@ -38,4 +38,12 @@ public class Privilege {
 		}
 		return -1;
 	}
+	
+	/**
+	 * Gives all currently supported privileges
+	 * @return all supported privileges
+	 */
+	public static String[] getPrivileges() {
+		return bitPositions;
+	}
 }

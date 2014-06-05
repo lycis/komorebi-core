@@ -116,7 +116,7 @@ public class User implements Principal{
 		if(status){
 			privileges = privileges | (1 << bit);
 		}else{
-			privileges = privileges | ~(1 << bit);
+			privileges = privileges & ~(1 << bit);
 		}
 		return;
 	}
@@ -133,6 +133,6 @@ public class User implements Principal{
 			throw new SecurityException("Unknown privilege");
 		}
 		
-		return ((privileges & (1 << bit)) == 1);
+		return ((privileges & (1 << bit)) == (1 << bit));
 	}
 }

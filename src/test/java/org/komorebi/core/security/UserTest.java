@@ -29,19 +29,24 @@ public class UserTest {
 	}
 	
 	
-	// TODO test credentials with multiple values
-	
-	// TODO test privileges
+	/**
+	 * Check if granting and revoking privileges works for all supported privileges.
+	 */
 	@Test
-	public void testPrivileges(){
+	public void testGrantRevokePrivileges(){
 		User user = new User();
 		
-		assertFalse("administrator privilege was set on new user", user.hasPrivilege(Privilege.ADMINISTRATOR));
-		
-		user.setPrivilege(Privilege.ADMINISTRATOR, true);
-		assertTrue("administrator privilege was not granted", user.hasPrivilege(Privilege.ADMINISTRATOR));
-		
-		user.setPrivilege(Privilege.ADMINISTRATOR, false);
-		assertFalse("administrator privilege was not revoked", user.hasPrivilege(Privilege.ADMINISTRATOR));
+		for(String priv: Privilege.getPrivileges()){
+			assertFalse("privilege '"+priv+"' was set on new user", user.hasPrivilege(priv));
+			
+			// grant
+			user.setPrivilege(priv, true);
+			assertTrue("privilege '"+priv+"' was not granted", user.hasPrivilege(priv));
+			
+			// revoke
+			user.setPrivilege(priv, false);
+			assertFalse("privilege '"+priv+"' was not revoked", user.hasPrivilege(priv));
+		}
 	}
+	
 }
