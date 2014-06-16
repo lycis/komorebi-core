@@ -27,7 +27,7 @@ import org.komorebi.core.configuration.KomorebiCoreConfig;
  * 
  */
 public class UserStore {
-	
+
 	// constants
 	private static final int VERSION = 1; // most recent version of the file format
 	private static final int PASSWORD_BLOCK_LEN = 1024; // length of the password block
@@ -35,7 +35,7 @@ public class UserStore {
 
 	// singleton instance
 	private static UserStore store = new UserStore();
-	
+
 	// members
 	private Map<String, User> userMap = null;
 
@@ -79,7 +79,7 @@ public class UserStore {
 		RandomAccessFile raf = null;
 		try {
 			raf = new RandomAccessFile(storefile, "r");
-			
+
 			// read version
 			int version = raf.readInt();
 			if (version != 1) {
@@ -94,9 +94,9 @@ public class UserStore {
 
 		} catch (IOException e) {
 			Logger.getLogger("userstore")
-					.severe("The user store can not be accessed (reason: "
-							+ e.getMessage()
-							+ "). It may be corrputed! You may need to delete and renew it...");
+			.severe("The user store can not be accessed (reason: "
+					+ e.getMessage()
+					+ "). It may be corrputed! You may need to delete and renew it...");
 			return false;
 		} finally {
 			if (raf != null) {
@@ -109,7 +109,7 @@ public class UserStore {
 				}
 			}
 		}
-		
+
 		Logger.getLogger("userstore").info("Loaded User Store with "+userMap.size()+" registered users.");
 		return true;
 	}
@@ -128,7 +128,7 @@ public class UserStore {
 
 		User adminUser = new User();
 		adminUser.setName(adminuser);
-		
+
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
 		File storefile = new File(config.getString("users.store"));
 		if(storefile.exists()){
@@ -139,14 +139,24 @@ public class UserStore {
 				return;
 			}
 		}
-		
+
+		// grant all privileges to admin user
+		// TODO fix
+		for(String priv: Privilege.getPrivileges()){			
+			// grant
+			adminUser.setPrivilege(priv, true);
+			if(!adminUser.hasPrivilege(priv)){
+				System.out.println("WARNING: could not grant privilege \""+priv+"\"");
+			}
+		}
+
 		RandomAccessFile raf = null;
 		try{
-			 raf = new RandomAccessFile(storefile, "rw");
-			
+			raf = new RandomAccessFile(storefile, "rw");
+
 			// write version
 			raf.writeInt(VERSION);
-			
+
 			// write admin user
 			adminUser.setPosition(raf.getFilePointer()); // admin user starts on position zero
 			storeUser(adminUser, raf, true);
@@ -164,7 +174,7 @@ public class UserStore {
 				}
 			}
 		}
-		
+
 		// set password
 		if(!setPassword(adminUser.getPosition(), adminpass)){
 			// password set failed :(
@@ -172,19 +182,10 @@ public class UserStore {
 			System.out.println("Initialisation failed. Could not set administrative password.");
 			System.exit(1);
 		}
-		
+
 		clearPassword(adminpass);
-		
-		// grant all privileges to admin user
-		for(String priv: Privilege.getPrivileges()){			
-			// grant
-			adminUser.setPrivilege(priv, true);
-			if(!adminUser.hasPrivilege(priv)){
-				System.out.println("WARNING: could not grant privilege \""+priv+"\"");
-			}
-		}
 	}
-	
+
 	/**
 	 * Store this user (except password) in the user store
 	 * @param ds data stream to write to
@@ -192,7 +193,7 @@ public class UserStore {
 	 * @param unew indicates that it is a new user
 	 */
 	private void storeUser(User user, RandomAccessFile raf, boolean unew) throws IOException{
-		
+
 		// 1. password - either skip or delete
 		if(unew){
 			byte[] pass = new byte[PASSWORD_BLOCK_LEN]; // 1K password block
@@ -200,14 +201,14 @@ public class UserStore {
 		}else{
 			raf.seek(user.getPosition()+PASSWORD_BLOCK_LEN);
 		}
-		
+
 		// 2. user name
 		// 2.a length of user name
 		raf.writeInt(user.getName().length());
 		// 2.b actual user name
 		byte[] uname = user.getName().getBytes(STRING_ENCODING);
 		raf.write(uname);
-		
+
 		// 3. credentials
 		Set<String> locations = user.getLocations();
 		// 3.a number of locations
@@ -216,38 +217,40 @@ public class UserStore {
 			// 3.b location (length + name)
 			raf.write(loc.length());
 			raf.write(loc.getBytes(STRING_ENCODING));
-			
+
 			// 3.c number of credentials
 			Set<String> credentials = user.getCredentials(loc);
 			raf.write(credentials.size());
-			
+
 			for(String key: credentials){
 				// 3.d key (length + key)
 				raf.write(key.length());
 				raf.write(key.getBytes(STRING_ENCODING));
-				
+
 				// 3.e value (length + key)
 				String val = user.getCredentialValue(loc, key);
 				raf.write(val.length());
 				raf.write(val.getBytes(STRING_ENCODING));
 			}
 		}
+		
+		// TODO store privileges
 	}
-	
+
 	private User restoreUser(RandomAccessFile raf) throws IOException{
 		User u = new User(); // returned user object
-		
+
 		long startpos = raf.getFilePointer(); // position of user record
 		u.setPosition(startpos);
-		
+
 		if(raf.length()-startpos <= PASSWORD_BLOCK_LEN){
 			throw new IOException("Corrupted user record detected. Password block is too small. ("+(raf.length()-startpos)+" instead of "
-					              +PASSWORD_BLOCK_LEN+")");
+					+PASSWORD_BLOCK_LEN+")");
 		}
-		
+
 		// read over pass word block
 		raf.seek(raf.getFilePointer()+PASSWORD_BLOCK_LEN);
-		
+
 		// read user name
 		int unameLen = raf.readInt();
 		byte[] uname = new byte[unameLen];
@@ -255,7 +258,7 @@ public class UserStore {
 			throw new IOException("Corrupted user store. User record does not contain user name!");
 		}
 		u.setName(new String(uname, STRING_ENCODING));
-		
+
 		// 3. read location credentials
 		int locationCount = raf.readInt();
 		for(int i=0;i<locationCount;++i){
@@ -265,9 +268,9 @@ public class UserStore {
 			if(raf.read(locNameBArr) != locationStrLen){ // 3.b location name
 				throw new IOException("Corrupted user store. Credential location record is invalid.");
 			}
-			
+
 			String location = new String(locNameBArr, STRING_ENCODING);
-			
+
 			// 3.c read number of credentials for location
 			int numCredentials = raf.readInt();
 			for(int j=0; j<numCredentials; ++j){
@@ -277,22 +280,24 @@ public class UserStore {
 				if(raf.read(keyBArr) != keyLen){
 					throw new IOException("Corrupted user store. Credential key record is invalid.");
 				}
-				
+
 				// 3.d credential key (length + key)
 				int valLen = raf.readInt();
 				byte[] valBArr = new byte[valLen];
 				if(raf.read(valBArr) != valLen){
 					throw new IOException("Corrupted user store. Credential value record is invalid.");
 				}
-				
+
 				String credentialKey = new String(keyBArr, STRING_ENCODING);
 				String credentialValue = new String(valBArr, STRING_ENCODING);
 				u.setCredentialValue(location, credentialKey, credentialValue);
 			}
 		}
+		
+		// TODO restore privileges
 		return u;
 	}
-	
+
 	/**
 	 * Checks if the given password matches the password of the user. Used for e.g. login.
 	 * The given password will be hashed according to the configured method and checked afterwards. So if
@@ -304,20 +309,20 @@ public class UserStore {
 	 */
 	synchronized public boolean checkPassword(User user, char[] password){
 		KomorebiCoreConfig conf = new KomorebiCoreConfig();
-		
+
 		// hash and clear given password
 		byte[] hashedPw = hashPassword(password, conf.getString("users.hashmethod"));
 		if(hashedPw.length != PASSWORD_BLOCK_LEN){
 			return false; // the password block is always the same size
 		}
-		
+
 		// read configured password from file
 		File usfile = new File(conf.getString("users.store"));
 		if(!usfile.exists()){
 			Logger.getLogger("userstore").severe("User store file does not exist!");
 			return false;
 		}
-		
+
 		byte[] filePw = new byte[PASSWORD_BLOCK_LEN];
 		RandomAccessFile raf = null;
 		try{
@@ -338,17 +343,17 @@ public class UserStore {
 				}
 			}
 		}
-		
+
 		// check if hashed passwords do match
 		for(int i=0; i<PASSWORD_BLOCK_LEN; ++i){
 			if(hashedPw[i] != filePw[i]){
 				return false; // passwords do not match
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Applies the given hash algorithm to the password. The password will be cleard afterwards.
 	 * 
@@ -358,7 +363,7 @@ public class UserStore {
 	 */
 	private byte[] hashPassword(char[] password, String method){
 		byte[] hashed = new byte[PASSWORD_BLOCK_LEN];
-		
+
 		method = method.trim().toUpperCase();
 		if("PLAIN".equals(method)){
 			// warn about plaintext
@@ -370,11 +375,11 @@ public class UserStore {
 			Logger.getLogger("userstore").severe("Can not set password - Unknown hash method.");
 			return hashed;
 		}
-		
+
 		clearPassword(password);
 		return hashed;
 	}
-	
+
 	/**
 	 * Sets and hashes a user password.
 	 * 
@@ -384,11 +389,11 @@ public class UserStore {
 	 */
 	synchronized public boolean setPassword(long position, char[] password){
 		KomorebiCoreConfig config = new KomorebiCoreConfig();
-		
+
 		byte[] filePass = hashPassword(password, config.getString("users.hashmethod"));
-		
+
 		// TODO implement SHA-2
-		
+
 		// RAF access
 		try{
 			RandomAccessFile usfile = new RandomAccessFile(config.getString("users.store"), "rw");
@@ -402,11 +407,11 @@ public class UserStore {
 			Logger.getLogger("userstore").severe("Can not set password: "+e.getMessage());
 			return false;
 		}
-		
+
 		clearPassword(password);
 		return true;
 	}
-	
+
 	/**
 	 * Clears a character array that was used to store a password by overwriting it with random
 	 * characters.
@@ -419,7 +424,7 @@ public class UserStore {
 			pw[i] = alphabet.charAt(r.nextInt(alphabet.length()));
 		}
 	}
-	
+
 	/**
 	 * Returns the User object (permissions, connected services, etc.) associated with the user
 	 * name. 
