@@ -10,10 +10,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.komorebi.core.security.Privilege;
 import org.komorebi.core.security.User;
+import org.komorebi.core.security.UserStore;
 
 /**
  * This resource controls the storage locations that the user has added 
@@ -54,7 +56,7 @@ public class Location {
 			json = new JSONObject(data); // check if json is valid
 			
 			// check if all required fields are supplied
-			if(json.getString("location") == null || json.getJSONObject("credentials") == null){
+			if(json.getString("location") == null || json.getJSONArray("credentials") == null){
 				throw new JSONException("not all required fields provided");
 			}
 		}catch(JSONException e){
@@ -78,10 +80,32 @@ public class Location {
 			return Response.status(Response.Status.UNAUTHORIZED).build();
 		}
 		
+		// get user
+		User user;
 		if(targetUser == null){
-			// TODO add location to target user
+			user = UserStore.getInstance().getUser(context.getUserPrincipal().getName());
 		}else{
-			// TODO add location to current user
+			user = UserStore.getInstance().getUser(targetUser);
+		}
+		
+		// get location
+		String location = json.getString("location");
+		
+		// set all credentials for location
+		JSONArray credentialList = json.getJSONArray("credentials");
+		for(int i=0; i<credentialList.length(); ++i){
+			JSONObject credJson = credentialList.getJSONObject(i);
+			if(credJson == null){
+				return Response.status(Response.Status.BAD_REQUEST).build();
+			}
+			
+			String key = credJson.getString("key");
+			String value = credJson.getString("value");
+			if(key == null || value == null){
+				return Response.status(Response.Status.BAD_REQUEST).build();
+			}
+			
+			user.setCredentialValue(location, key, value);
 		}
 		
 		return Response.status(Response.Status.OK).build();

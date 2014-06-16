@@ -17,8 +17,7 @@ public class KomorebiSecurityContext implements SecurityContext {
 	}
 
 	public boolean isUserInRole(String role) {
-		// TODO user privileges check
-		return false;
+		return user.hasPrivilege(role);
 	}
 
 	public boolean isSecure() {

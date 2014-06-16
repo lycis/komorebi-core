@@ -1,5 +1,8 @@
 package org.komorebi.core.security;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.Console;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -171,6 +174,15 @@ public class UserStore {
 		}
 		
 		clearPassword(adminpass);
+		
+		// grant all privileges to admin user
+		for(String priv: Privilege.getPrivileges()){			
+			// grant
+			adminUser.setPrivilege(priv, true);
+			if(!adminUser.hasPrivilege(priv)){
+				System.out.println("WARNING: could not grant privilege \""+priv+"\"");
+			}
+		}
 	}
 	
 	/**
