@@ -234,7 +234,8 @@ public class UserStore {
 			}
 		}
 		
-		// TODO store privileges
+		// 4. privileges
+		raf.writeLong(user.privileges);
 	}
 
 	private User restoreUser(RandomAccessFile raf) throws IOException{
@@ -294,7 +295,9 @@ public class UserStore {
 			}
 		}
 		
-		// TODO restore privileges
+		// 4. privileges
+		long priv = raf.readLong();
+		u.privileges = priv;
 		return u;
 	}
 

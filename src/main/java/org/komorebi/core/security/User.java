@@ -17,7 +17,7 @@ public class User implements Principal{
 	private String username = "";
 	private long position = 0; // position of the user within the user store (needed for password check)
 	private Map<String, Map<String, String>> credentials = new HashMap<String, Map<String, String>>(); // credentials for storage locations
-	private long privileges = 0; // privileges bitmask
+	protected long privileges = 0; // privileges bitmask
 	
 	// TODO user groups
 	
