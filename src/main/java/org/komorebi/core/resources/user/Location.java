@@ -1,6 +1,7 @@
 package org.komorebi.core.resources.user;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -45,6 +46,13 @@ public class Location {
 		}
 		
 		return json.toString();
+	}
+	
+	@DELETE
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response delete(String data, @Context SecurityContext context){
+		// TODO implement - remove location and credentials from user
+		return Response.status(Response.Status.OK).build();
 	}
 	
 	@PUT
