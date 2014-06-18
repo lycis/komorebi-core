@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.komorebi</groupId>
-	<artifactId>core</artifactId>
+	<artifactId>komorebi-core</artifactId>
 	<version>0.1.0</version>
 	<name>komorebi-core</name>
 	<description>This is the core component of the scattered could storage service Komorebi. It incorporates the server that provides the REST access and is responsible for the scattering and management of the stored files.</description>
@@ -60,7 +60,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.komorebi</groupId>
-			<artifactId>plugin</artifactId>
+			<artifactId>komorebi-plugin</artifactId>
 			<version>0.0.1</version>
 		</dependency>
 		<dependency>
@@ -136,6 +136,15 @@
 						</lifecycleMappingMetadata>
 					</configuration>
 				</plugin>
+                                 <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-compiler-plugin</artifactId>
+           <version>2.3.1</version>
+           <configuration>
+               <source>1.7</source>
+               <target>1.7</target>
+           </configuration>
+       </plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
