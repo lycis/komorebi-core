@@ -3,6 +3,8 @@ package org.komorebi.core;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -11,6 +13,7 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.server.model.ResourceMethod;
 import org.komorebi.core.configuration.KomorebiCoreConfig;
 import org.komorebi.core.plugin.PluginManager;
 import org.komorebi.core.security.UserStore;
@@ -47,6 +50,16 @@ public class ServerRunner implements Runnable {
 		ResourceConfig rc = new ResourceConfig();
 		rc.packages(true, "org.komorebi.core.resources");
 		rc.register(org.komorebi.core.security.ResourceAuthFilter.class);
+		
+		// log available resources
+		Logger.getGlobal().info("Available resources: "+rc.getResources().size());
+		for(Resource r: rc.getResources()){
+			String resourceLogStr = r.getPath() + ": ";
+			for(ResourceMethod m: r.getAllMethods()){
+				resourceLogStr += m.getHttpMethod() + " ";
+			}
+			Logger.getGlobal().info("* "+resourceLogStr);
+		}
 
 		URI uri = null;
 		try {
@@ -83,7 +96,7 @@ public class ServerRunner implements Runnable {
 
 			}
 		}, "shutdownHook"));
-
+	
 		// go to waiting mode until the server shuts down
 		try {
 			Logger.getGlobal()
