@@ -1,6 +1,7 @@
 package org.komorebi.core.resources.user;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -34,7 +35,7 @@ public class Location {
 	@Produces(MediaType.APPLICATION_JSON)
 	public String get(@Context SecurityContext context){
 		JSONObject json = new JSONObject();
-		
+
 		User user = (User) context.getUserPrincipal(); // get associated user
 		for(String location: user.getLocations()){
 			JSONObject locationJson = new JSONObject();
@@ -43,10 +44,44 @@ public class Location {
 			}
 			json.put(location, locationJson);
 		}
-		
+
 		return json.toString();
 	}
-	
+
+	@DELETE
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response delete(String data, @Context SecurityContext context){
+		// unmarshal json
+		JSONObject json = null;
+		try{
+			json = new JSONObject(data);
+		}catch(JSONException e){
+			return Response.status(Response.Status.BAD_REQUEST).build(); // no valid json
+		}
+
+		JSONArray locations = json.getJSONArray("locations");
+		if(locations == null)
+			return Response.status(Response.Status.OK).build();
+		
+		// get user
+		String userStr = json.getString("user");
+		User user;
+		if(userStr == null){
+			user = UserStore.getInstance().getUser(context.getUserPrincipal().getName());
+		}else{
+			user = UserStore.getInstance().getUser(userStr);
+		}
+
+		// TODO check for according privilege
+		/*if(!context.isUserInRole(Privilege.) ||  // you need either the privilege to add locations to your self 
+				(targetUser != null && !context.isUserInRole(Privilege.GRANT_LOCATION))){ // ... or to another user
+			return Response.status(Response.Status.UNAUTHORIZED).build();
+		}*/
+
+		// TODO remove location from user
+		return Response.status(Response.Status.OK).build();
+	}
+
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response put(String data, @Context SecurityContext context){
@@ -54,7 +89,7 @@ public class Location {
 		JSONObject json = null;
 		try{
 			json = new JSONObject(data); // check if json is valid
-			
+
 			// check if all required fields are supplied
 			if(json.getString("location") == null || json.getJSONArray("credentials") == null){
 				throw new JSONException("not all required fields provided");
@@ -62,24 +97,24 @@ public class Location {
 		}catch(JSONException e){
 			return Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		
+
 		String targetUser = null;
 		try{
 			targetUser = json.getString("user");
 		}catch(JSONException e){
 			targetUser = null;
 		}
-		
+
 		if(context.getUserPrincipal().getName().equals(targetUser)){
 			targetUser = null; // add location to the own profile
 		}
-		
+
 		// check for according privilege
 		if(!context.isUserInRole(Privilege.ADD_LOCATION) ||  // you need either the privilege to add locations to your self 
-		   (targetUser != null && !context.isUserInRole(Privilege.GRANT_LOCATION))){ // ... or to another user
+				(targetUser != null && !context.isUserInRole(Privilege.GRANT_LOCATION))){ // ... or to another user
 			return Response.status(Response.Status.UNAUTHORIZED).build();
 		}
-		
+
 		// get user
 		User user;
 		if(targetUser == null){
@@ -87,10 +122,10 @@ public class Location {
 		}else{
 			user = UserStore.getInstance().getUser(targetUser);
 		}
-		
+
 		// get location
 		String location = json.getString("location");
-		
+
 		// set all credentials for location
 		JSONArray credentialList = json.getJSONArray("credentials");
 		for(int i=0; i<credentialList.length(); ++i){
@@ -98,16 +133,16 @@ public class Location {
 			if(credJson == null){
 				return Response.status(Response.Status.BAD_REQUEST).build();
 			}
-			
+
 			String key = credJson.getString("key");
 			String value = credJson.getString("value");
 			if(key == null || value == null){
 				return Response.status(Response.Status.BAD_REQUEST).build();
 			}
-			
+
 			user.setCredentialValue(location, key, value);
 		}
-		
+
 		return Response.status(Response.Status.OK).build();
 	}
 }

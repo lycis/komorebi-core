@@ -83,6 +83,29 @@ public class User implements Principal{
 	}
 	
 	/**
+	 * Removes a given credential key from a location of the user.
+	 * If the last credential key is removed the whole location will be
+	 * deleted.
+	 * 
+	 * @param location location to modify
+	 * @param key credential key
+	 * @return <code>true</code> if the deletion was successful
+	 */
+	public boolean removeCredential(String location, String key){
+		if(credentials.containsKey(location)){
+			Map<String, String> locValues = credentials.get(location);
+			if(locValues.containsKey(key)){
+				locValues.remove(key);
+				return true;
+			}
+			if(locValues.isEmpty()){
+				credentials.remove(location);
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * Return all locations the user has credentials for (and that are therey configured)
 	 */
 	public Set<String> getLocations(){

@@ -49,4 +49,30 @@ public class UserTest {
 		}
 	}
 	
+	/**
+	 * Try adding a single location credential to a user.
+	 */
+	@Test
+	public void testAddLocationCredentialSingle(){
+		User user = new User();
+		user.setCredentialValue("testlocation", "testkey", "1234");
+		assertTrue("test credentials were not added", "1234".equals(user.getCredentialValue("testlocation", "testkey")));
+	}
+	
+	/**
+	 * Try adding multiple location credential to a user.
+	 */
+	@Test
+	public void testAddLocationCredentials(){
+		User user = new User();
+		user.setCredentialValue("testlocation0", "k0", "0");
+		user.setCredentialValue("testlocation0", "k1", "A");
+		user.setCredentialValue("testlocation1", "kA", "0");
+		user.setCredentialValue("testlocation1", "kB", "1");
+		
+		assertTrue("test credentials #0 were not added", "0".equals(user.getCredentialValue("testlocation0", "k0")));
+		assertTrue("test credentials #1 were not added", "A".equals(user.getCredentialValue("testlocation0", "k1")));
+		assertTrue("test credentials #2 were not added", "0".equals(user.getCredentialValue("testlocation1", "kA")));
+		assertTrue("test credentials #3 were not added", "1".equals(user.getCredentialValue("testlocation1", "kB")));
+	}
 }
